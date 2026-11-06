@@ -350,7 +350,7 @@ public class AutoRootService extends Service {
             return "could not install the bundled exploit: " + installed;
         }
         String target = service.run("target");
-        if (!target.contains("target=lynx")) {
+        if (!target.contains("target=asteroids")) {
             return "bundled exploit rejected for this kernel: " + target.trim();
         }
 

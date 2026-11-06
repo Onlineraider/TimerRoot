@@ -162,6 +162,21 @@ static const struct target_profile profile_6_6 = {
     0x18ULL, 0x30ULL, 0x80ULL, 0x88ULL, 0x90ULL, 0x98ULL, 0xa0ULL,
 };
 
+/* Nothing Phone (3a) / asteroids, 6.1.172-android14-11-g4538f521463f, 4K.
+ * do_timer_create+0xa8 return site; posix_timers_cache object_size 0x108,
+ * order-1 slab.  cred 0xb0 with 4-byte usage, security@0x78, task.cred@0x838. */
+static const struct target_profile profile_asteroids = {
+    "asteroids", 4096UL, 12, 1, 8192UL,
+    0xffffffc0081932fcULL, 0x1932fcULL,
+    0xffffffc00a27d848ULL, 0xffffffc00a02ac0cULL,
+    0xaba24ULL,
+    0xffffffc00a0505c0ULL, 0xffffffc00a050330ULL,
+    0xffffffc00a051e48ULL, 0xffffffc00a0518e0ULL,
+    0xffffff0000000000ULL, 0xffffffc000000000ULL,
+    0x4ULL, 0xb0ULL, 0xc0ULL, 0xb0ULL, 0x838ULL,
+    0x18ULL, 0x28ULL, 0x78ULL, 0x80ULL, 0x88ULL, 0x90ULL, 0x98ULL,
+};
+
 static const struct target_profile *g_tgt;
 static char g_device[128] = "unknown";
 static char g_kernel[256] = "unknown";
@@ -2253,7 +2268,9 @@ static void detect_target(void)
         snprintf(g_device, sizeof(g_device), "%s", dev);
 
     ps = sysconf(_SC_PAGESIZE);
-    if (strstr(g_kernel, "6.6.127-android15-8-g91d825611104-ab16252310"))
+    if (strstr(g_kernel, "6.1.172-android14-11-g4538f521463f"))
+        g_tgt = &profile_asteroids;
+    else if (strstr(g_kernel, "6.6.127-android15-8-g91d825611104-ab16252310"))
         g_tgt = &profile_6_6;
     else if (ps == 16384)
         g_tgt = &profile_16k;
@@ -2278,11 +2295,11 @@ int main(int argc, char **argv)
 
     detect_target();
     /* Lets the app confirm a downloaded binary targets this exact build.
-     * Keep target=lynx for the app's existing check; device picks the
+     * Keep target=asteroids for the app's existing check; device picks the
      * actual profile (Pixel 7a/9a/10, 4K or 16K kernel). */
     if (argc > 1 && !strcmp(argv[1], "target"))
     {
-        printf("target=lynx\ndevice=%s\nkernel=%s\npagesize=%lu\n"
+        printf("target=asteroids\ndevice=%s\nkernel=%s\npagesize=%lu\n"
                "profile=%s\ntimer_site=%#llx\n",
                g_device, g_kernel, (unsigned long)PAGE, g_tgt->name,
                (unsigned long long)STATIC_TIMER_SITE);

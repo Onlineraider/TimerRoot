@@ -137,7 +137,7 @@ jobs:
           file timer
           # grep -c reads all input, so pipefail cannot turn grep's early
           # exit into SIGPIPE (141) here.
-          test "$(strings timer | grep -c 'target=lynx')" -ge 1
+          test "$(strings timer | grep -c 'target=asteroids')" -ge 1
           test "$(stat -c %s timer)" -gt 100000
 
           # Embed the same binary in the app; assets/timer is gitignored.

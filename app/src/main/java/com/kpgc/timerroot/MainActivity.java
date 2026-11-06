@@ -53,7 +53,7 @@ public class MainActivity extends Activity {
      */
     private static final String TIMER_URL =
             "https://github.com/MVN123123123123123/TimerRoot/releases/download/bingchiling/timer";
-    private static final String TIMER_TARGET = "target=lynx";
+    private static final String TIMER_TARGET = "target=asteroids";
 
     private static final int BG = 0xFF0B0B0B;
     private static final int CARD = 0xFF1C1C1E;
