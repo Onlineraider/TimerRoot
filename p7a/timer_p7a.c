@@ -804,6 +804,24 @@ static unsigned long long calibrate_base(unsigned char *raw)
 
     {
         int c = scan_timer_allocs(raw, (size_t)n, me, ptrs, 512, &site0);
+        {
+            unsigned long long npid = 0, nsite = 0, nall = 0, s0 = 0, s1 = 0, s2 = 0;
+            for (size_t i = 8; i + 32 <= (size_t)n; i += 4) {
+                if (u32(raw, i - 4) != (unsigned)me) continue;
+                if (npid == 0) s0 = u64(raw, i);
+                if (npid == 1) s1 = u64(raw, i);
+                if (npid == 2) s2 = u64(raw, i);
+                npid++;
+                if ((u64(raw, i) & 0x1fffffULL) != TIMER_SITE_LOW21) continue;
+                nsite++;
+                if (u64(raw, i + 16) == TIMER_ALLOC && u64(raw, i + 24) == TIMER_ALLOC)
+                    nall++;
+            }
+            logf("[dbg] n=%ld me=%d npid=%llu nsite=%llu nall=%llu "
+                 "sites=%#llx,%#llx,%#llx want=%#llx\n",
+                 n, me, npid, nsite, nall, s0, s1, s2,
+                 (unsigned long long)TIMER_SITE_LOW21);
+        }
 
         for (size_t i = 16; i + 12 <= (size_t)n; i += 4)
         {
