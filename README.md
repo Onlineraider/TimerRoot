@@ -1,3 +1,11 @@
+# Fork: Nothing Phone (3a) (`asteroids`)
+
+This fork adds a `6.1.172-android14-11-g4538f521463f-ab16467005` profile for the
+Nothing Phone (3a). Everything else is upstream. See
+[Supported devices](#61172-4k--nothing-phone-3a).
+
+---
+
 # BIG NOTE: wait for 2-3 minutes after you logged into your device first time since new boot.
 the device needs to stablize itself, background process may eat up ram, swap and cpu ( which is critical for this exploit).
 ## SMALL NOTE: To run root automatically, install shizuku-next, and manually run root once.
@@ -63,17 +71,17 @@ installs it directly:
 
 ```
 installed 2106912 bytes (uid=2000)
-target=lynx
+target=asteroids
 kernel=6.1.162-android14-11-g9dd05ae3a1de-ab16261587
 profile=4k
-timer_site=0xffffffc008192f7c
+timer_site=0xffffffc0081932fc
 ```
 
-On a Pixel 10 the same `target=lynx` check passes and the kernel line reports
+On a Pixel 10 the same `target=asteroids` check passes and the kernel line reports
 `6.6.127-android15-8-g91d825611104-ab16252310-4k` with profile `6.6-4k`.
 
 After installing, the app always runs `timer target` and refuses any binary
-whose `target=` line does not match `target=lynx`.
+whose `target=` line does not match `target=asteroids`.
 
 The port derives every constant from the factory `boot.img` of that build
 (kallsyms + BTF), so re-derive them before using it on a different kernel.
@@ -149,6 +157,25 @@ has not been flashed on physical Pixel 10 hardware yet.
 If your device is not in these tables, or its status is untested, run
 `timer target` first and check that the reported `kernel=` matches. Do not run
 the exploit on a kernel that does not match.
+
+### 6.1.172 (4K) — Nothing Phone (3a)
+
+`6.1.172-android14-11-g4538f521463f-ab16467005`, `asteroids` (A059, SM7635),
+4K pages. Every constant was derived from that build's `boot.img`
+(kallsyms + disassembly). Status: **tested**.
+
+| Device | Codename | Kernel |
+| --- | --- | --- |
+| Nothing Phone (3a) | `asteroids` | `6.1.172-android14-11-g4538f521463f-ab16467005` |
+
+Two things differ from the Pixel profiles:
+
+- **The KASLR slide is 512 KB aligned here, not 2 MB.** The low 21 bits of the
+  call site move at runtime, so `scan_timer_allocs()` and `scan_task_allocs()`
+  match on 19 bits instead, and `calibrate_base()` rejects a slide that is not
+  512 KB aligned.
+- **`/data/adb` does not exist** on a device where KernelSU was only ever
+  installed as an APK. The late-load script creates it before staging `ksud`.
 
 ## Build
 
@@ -228,10 +255,10 @@ binary you built into `app/src/main/assets/timer`. Either path installs it to
 
 ```
 installed 2106912 bytes (uid=2000)
-target=lynx
+target=asteroids
 kernel=6.1.162-android14-11-g9dd05ae3a1de-ab16261587
 profile=4k
-timer_site=0xffffffc008192f7c
+timer_site=0xffffffc0081932fc
 ```
 
 `Diagnose` runs `timer ids`, which only probes the tracefs page event ids and
@@ -343,6 +370,12 @@ The status card reflects what is actually live, detected by running
 | Root shell | `uid=0`, `u:r:shell:s0` |
 | Jailbreak mode | KernelSU loaded, `su` works in `u:r:ksu:s0` |
 
+
+### `Failed to rename /data/local/tmp/.ksud-stage to /data/adb/ksud`
+
+`/data/adb` is missing. The late-load script runs `mkdir -p /data/adb` before
+staging. If it still fails, confirm the fake-cred stage reached full caps
+(`CapEff: 000001ffffffffff` in the log) and that SELinux is permissive.
 
 ## Safety
 
