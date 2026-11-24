@@ -1219,6 +1219,9 @@ static void write_ksu_script(void)
         "  done\n"
         "fi\n"
         "[ -n \"$PKG\" ] || PKG=me.weishu.kernelsu\n"
+        /* late-load stages ksud into /data/adb; that tree does not exist on a
+         * device where the manager was never installed. */
+        "mkdir -p /data/adb/modules 2>/dev/null; chmod 700 /data/adb 2>/dev/null\n"
         "if [ ! -x \"$KSUD\" ]; then\n"
         "  echo \"[ksu] ksud missing (tried: $PKGS, any user-0 package "
         "with libksud.so, /data/local/tmp/ksud, /data/adb/ksu/bin/ksud)\"\n"
